@@ -1,0 +1,982 @@
+/* --- Загальні стилі та налаштування --- */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Instrument Sans", sans-serif;
+    background-color: #e9e9e9;
+    color: #212121;
+    line-height: 1.5;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+.page-wrapper {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 2rem 6rem;
+    background-color: #f7f7f7;
+    position: relative;
+    overflow-x: hidden;
+}
+
+/* --- ГОРИЗОНТАЛЬНІ ЛІНІЇ-РОЗДІЛЬНИКИ --- */
+.hero-section, .services-section, .portfolio-section, .process-section, .faq-section {
+    position: relative;
+    padding-bottom: 5rem;
+}
+
+.services-section::after,
+.portfolio-section::after,
+.process-section::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: -8rem;
+    right: -8rem;
+    height: 1px;
+    background: linear-gradient(to right, transparent, #e0e0e0 20%, #e0e0e0 80%, transparent);
+}
+
+/* --- Хедер --- */
+.main-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 5rem;
+    position: relative;
+    z-index: 1;
+}
+
+.logo {
+    font-weight: 400;
+    font-size: 20px;
+    text-transform: uppercase;
+}
+
+.main-nav {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    font-size: 20px;
+}
+
+/* --- Кнопки --- */
+.btn {
+    display: inline-block;
+    padding: 0.8rem 1.5rem;
+    font-weight: 400;
+    border-radius: 0px;
+    transition: background-color 0.3s ease;
+    font-size: 14px;
+}
+
+.btn-dark {
+    background-color: #212121;
+    color: #ffffff;
+}
+
+.btn-dark:hover {
+    background-color: #424242;
+}
+
+
+/* --- Головна секція --- */
+.hero-section {
+    z-index: 2;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Контент (те, що «фотографуємо») */
+.hero-content { position: relative; z-index: 1; }
+
+/* 3D-шар над текстом */
+.hero-3d {
+  position: absolute;
+  inset: 0;
+  z-index: 10;   /* поверх тексту */
+  pointer-events: none;
+}
+
+
+/* контент hero нижче за 3D (можна залишити як є) */
+.hero-section > *:not(.hero-3d) {
+    position: relative;
+    z-index: 1;
+}
+
+/* опційно, якщо хочеш м’яке змішування кольорів кулі з текстом */
+.hero-3d canvas {
+    opacity: 0.95;           /* підкрути під смак */
+    /* mix-blend-mode: screen;  // спробуй: screen / lighten / overlay */
+}
+
+.hero-title {
+    font-size: 96px;
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: -4.8px;
+    text-transform: uppercase;
+    margin-bottom: 6rem;
+    position: relative;
+    z-index: 1;
+}
+
+.hero-title-design {
+    margin-left: 570px;
+    font-size: 150px;
+    text-transform: none;
+    font-weight: 700;
+    letter-spacing: -7.5px;
+    text-align: left;
+    color: #333;
+}
+
+.hero-title-low {
+    margin-left: 260px;
+}
+
+/* --- Нижня сітка контенту --- */
+.hero-content-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 17px;
+    align-items: end;
+    position: relative;
+    z-index: 1;
+}
+
+.left-column {
+    display: flex;
+    align-items: center;
+    gap: 0px;
+}
+
+.sub-heading {
+    text-align: right;
+    font-weight: 600;
+    font-size: 3rem;
+    line-height: 1;
+    white-space: nowrap;
+    margin-right: 1rem;
+}
+
+.description {
+    max-width: 500px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+.impact-text {
+    font-weight: 900;
+    font-size: 2rem;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.description-text {
+    line-height: 1.5;
+    font-size: 20px;
+}
+
+.right-column {
+    justify-self: start;
+}
+
+.right-column p {
+    margin-bottom: 1rem;
+    font-size: 14px;
+}
+
+.btn-hero-dark {
+    background-color: #212121;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 12px 24px;
+    transition: background-color 0.3s ease;
+}
+
+.section-title {                    /* --- НАЛАШТУВАННЯ ВСІХ ТАЙТЛІВ !!!! --- */
+    font-weight: 500;
+    font-size: 24px;
+    text-transform: uppercase;
+    margin-bottom: 2rem;
+    position: relative;
+    padding-bottom: 1rem;
+}
+
+/* --- Секція Послуг --- */
+
+/* --- ЄДИНІ ВЕРТИКАЛЬНІ ЛІНІЇ ДЛЯ HERO ТА SERVICES --- */
+
+/* 1. Робимо колонку точкою відліку */
+.services-column {
+    position: relative;
+    z-index: 1; /* Переконуємось, що контент колонки вище ліній */
+}
+
+/* 2. Створюємо довгу лінію для кожної колонки */
+.services-column::before {
+    content: '';
+    position: absolute;
+    left: 0; /* Прив'язка до лівого краю колонки */
+    width: 1px;
+    z-index: -1; /* Ховаємо лінію за контент */
+
+    /* Магія: робимо лінію дуже високою, щоб вона йшла вгору і вниз */
+    top: -100vh; /* Починаємо лінію високо над екраном */
+    height: 170vh; /* Робимо її висотою у два екрани */
+
+    /* Створюємо градієнт, який з'являється і зникає */
+    background: linear-gradient(
+        to bottom,
+        transparent 0%,      /* Початок (верх hero) - прозорий */
+        #e0e0e0 25%,         /* Плавно з'являється */
+        #e0e0e0 80%,         /* Основна частина - суцільна */
+        transparent 100%     /* Плавно зникає внизу */
+    );
+}
+
+/* 3. Компенсуємо відступи для 2-ї та 3-ї колонок */
+.services-column:nth-child(2)::before {
+    /* Оскільки колонка зміщена на 11rem вниз, піднімаємо її лінію на стільки ж */
+    transform: translateY(-11rem);
+}
+
+.services-column:nth-child(3)::before {
+    /* Аналогічно для третьої колонки */
+    transform: translateY(-22rem);
+}
+
+
+.services-section {
+    padding-top: 5rem;
+    z-index: 1;
+}
+
+.services-grid {
+    margin-left: 9rem;
+    margin-right: 9rem;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5rem;
+    align-items: flex-start;
+    position: relative;
+    z-index: 1;
+}
+
+.services-column {
+    margin-left: 0rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+}
+
+.services-column:nth-child(2) {
+    margin-top: 11rem;
+}
+
+.services-column:nth-child(3) {
+    margin-top: 22rem;
+}
+
+.service-item-heading {
+    font-weight: 500;
+    margin-bottom: 0.75rem;
+    font-size: 16px;
+}
+
+.service-item-text {
+    color: #555;
+    line-height: 1.6;
+    font-size: 14px;
+}
+
+/* --- Секція Портфоліо --- */
+.portfolio-section {
+    padding-top: 5rem;
+    z-index: 1;
+}
+
+.portfolio-grid {
+    margin-left: 9rem;
+    margin-right: 9rem;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5rem;
+}
+
+.portfolio-item {
+    background-color: #fff;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.portfolio-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+}
+
+.portfolio-image-wrapper img {
+    width: 100%;
+    display: block;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+}
+
+.portfolio-item-content {
+    padding: 1.5rem;
+}
+
+.portfolio-item-content p {
+    color: #555;
+    margin-bottom: 1.5rem;
+}
+
+.portfolio-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 700;
+    color: #212121;
+}
+
+.portfolio-link svg {
+    width: 1em;
+    height: 1em;
+    transition: transform 0.3s ease;
+}
+
+.portfolio-link:hover svg {
+    transform: translateX(4px);
+}
+
+.portfolio-item--link-only {
+    background-color: transparent;
+    box-shadow: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 350px;
+}
+
+.portfolio-item--link-only:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.portfolio-see-all {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    color: #555;
+    font-weight: 700;
+    text-align: center;
+}
+
+.portfolio-see-all svg {
+    width: 48px;
+    height: 48px;
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: 50%;
+    transition: border-color 0.3s ease, color 0.3s ease;
+}
+
+.portfolio-see-all:hover {
+    color: #212121;
+}
+
+.portfolio-see-all:hover svg {
+    border-color: #212121;
+}
+
+/* --- Секція Процес (ОНОВЛЕНО) --- */
+.process-section {
+    padding-top: 5rem;
+    z-index: 1;
+}
+
+.process-grid {
+    margin-left: 9rem;
+    margin-right: 9rem;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5rem 5rem;
+    position: relative;
+    z-index: 1;
+}
+
+.process-item {
+    position: relative;
+    padding-top: 4rem;
+    padding-left: 0rem;
+}
+
+/* Нове правило для реального елемента лінії */
+.v-line-item {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 1px;
+    background: linear-gradient(to bottom, transparent, #e0e0e0 20%, #e0e0e0 80%, transparent);
+}
+
+.process-item-number {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    font-size: 1rem;
+    font-weight: 200;
+    color: #000000;
+    line-height: 1;
+    z-index: 1;
+}
+
+.process-item-title {
+    font-weight: 500;
+    font-size: 1rem;
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+}
+
+.process-item-summary {
+    margin-bottom: 2rem;
+    font-weight: 500;
+    font-size: 16px;
+}
+
+.process-item-text {
+    font-size: 14px;
+}
+
+.process-item p:last-of-type {
+    color: #555;
+    line-height: 1.6;
+}
+
+/* --- Секція FAQ --- */
+
+.faq-section {
+    max-width: none;
+    padding-top: 5rem;
+    padding-bottom: 5rem;
+}
+
+.faq-accordion {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem; /* Відстань між елементами FAQ */
+    margin-left: 7rem;
+    margin-right: 9rem;
+}
+
+.faq-item {
+  display: flex;
+  align-items: flex-start;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 8px; /* Відступ знизу для кожного питання */
+  padding-top: 8px; /* Відступ зверху для кожного питання */
+  gap: 1rem;
+  height: 60px; /* стартова висота = висоті питання */
+  overflow: hidden; /* щоб приховати відповідь */
+  transition: height 0.3s ease;
+  font-size: 14px;
+}
+
+/* При відкритті збільшуємо висоту під контент */
+.faq-item.open {
+  height: auto;
+  overflow: visible;
+}
+
+.question {
+  flex: 0 0 267px;
+  max-width: 267px;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  user-select: none;
+  display: flex;
+  align-items: flex-start;
+  height: auto;
+}
+
+.answer-wrapper {
+  flex: 1;
+  padding-left: 64px;
+  padding-right: 64px;
+  overflow: visible;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  height: 100%;
+}
+
+.answer-text {
+  white-space: normal;
+  opacity: 0;
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 0.2s ease, opacity 0.2s ease;
+  user-select: text;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.answer-text.show {
+  opacity: 1;
+  clip-path: inset(0 0 0 0);
+}
+
+.toggle-btn {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-left: 10px;
+}
+
+.toggle-btn .line {
+  position: absolute;
+  background-color: #333;
+  transition: opacity 0.2s ease;
+}
+
+.toggle-btn .vertical {
+  width: 1px;
+  height: 18px;
+  left: 8px;
+  top: 0;
+  opacity: 1;
+}
+
+.toggle-btn .horizontal {
+  height: 1px;
+  width: 18px;
+  top: 8px;
+  left: 0;
+  opacity: 1;
+}
+
+.toggle-btn.open .vertical {
+  opacity: 0; /* Вертикальна лінія зникає — лишається мінус */
+}
+
+
+/* --- СТИЛІ ДЛЯ CTA БЛОКУ --- */
+
+
+.cta {
+  background: #4a4a4a; /* фон */
+  padding: 0; /* приберемо padding, щоб картинка "прилипла" */
+}
+
+.cta-container {
+  display: flex;
+  align-items: stretch; /* ключове: розтягне картинку на висоту блоку */
+  justify-content: space-between;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 240px;
+}
+
+/* зображення */
+.cta-image {
+  flex: 0 0 35%; /* ширина блоку із картинкою, можна змінити */
+}
+
+.cta-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* заповнює блок, не спотворюючи картинку */
+  display: block;
+}
+
+/* текст */
+.cta-text {
+  flex: 1;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+  padding: 20px 40px 20px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end; /* пересуне весь текстовий контент вправо */
+  text-align: left; /* вирівняє багаторядковий текст по лівому краю */
+}
+
+/* кнопка */
+.cta-button {
+  display: flex;
+  align-items: center;
+  padding: 40px 20px;
+}
+
+.cta-button .btn {
+  background: #fff;
+  color: #333;
+  padding: 12px 24px;
+  font-size: 14px;
+  text-decoration: none;
+  font-weight: 400;
+  transition: background .3s, transform .2s;
+  white-space: nowrap;
+}
+
+.cta-button .btn:hover {
+  background: #f2f2f2;
+  transform: translateY(-2px);
+}
+
+/* --- Адаптивність --- */
+
+@media (max-width: 1340px) {
+    .cta-text {
+        padding: 20px 20px 20px 20px;
+    }
+}
+
+@media (max-width: 1280px) {
+    .cta-text {
+        padding: 20px 10px 20px 20px;
+    }
+}
+
+@media (max-width: 1230px) {
+    .cta-text {
+        padding: 20px 0px 20px 20px;
+    }
+}
+
+@media (max-width: 1200px) {
+    .services-grid, .portfolio-grid, .process-grid {
+        gap: 3rem;
+    }
+
+    }
+
+@media (max-width: 1200px) {
+    .page-wrapper {
+        padding: 2rem 4rem;
+    }
+
+    .hero-title-design {
+        margin-left: 350px;
+    }
+
+    .services-section::after,
+    .portfolio-section::after,
+    .process-section::after {
+        left: -4rem;
+        right: -4rem;
+    }
+
+    .hero-content-grid {
+        padding-right: 32px;
+    }
+
+    .cta-container {
+        padding: 0 208px;
+    }
+
+    .cta-text {
+        padding: 20px 0 20px 20px;
+    }
+
+}
+
+@media (max-width: 992px) {
+    .page-wrapper {
+        padding: 2rem;
+    }
+
+    .main-header {
+        flex-direction: column;
+        gap: 1.5rem;
+        align-items: flex-start;
+    }
+
+    .hero-title {
+        font-size: 60px;
+    }
+
+    .hero-title-design {
+        font-size: 90px;
+        margin-left: 0;
+    }
+
+    .hero-title-low {
+        margin-left: 0;
+    }
+
+    .hero-content-grid {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+    }
+
+    .services-grid, .portfolio-grid, .process-grid {
+        grid-template-columns: 1fr 1fr;
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .services-column:nth-child(2), .services-column:nth-child(3) {
+        margin-top: 0;
+    }
+
+    /* Ховаємо всі лінії на менших екранах */
+    .line-container,
+    .services-section::after,
+    .portfolio-section::after,
+    .process-section::after {
+        display: none;
+    }
+
+    .v-line-item {
+        display: none;
+    }
+
+    .services-column::before {
+        display: none;
+    }
+
+}
+
+@media (max-width: 768px) {
+    .services-grid, .process-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .hero-content-grid {
+        padding-right: 0px;
+    }
+
+    .faq-item {
+        gap: 0.25rem;
+    }
+
+    .question {
+        font-size: 0.95rem;
+    }
+
+    .answer-text {
+        font-size: 0.95rem;
+    }
+
+    .btn-light {
+        padding: 0.8rem 1.5rem;
+        font-size: 0.95rem;
+    }
+
+    .page-wrapper {
+        padding: 2rem 1rem;
+    }
+
+    .cta-container {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .cta-text {
+        justify-content: center;
+        text-align: center;
+    }
+}    
+
+@media (max-width: 480px) {
+
+    .portfolio-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .btn-light {
+        padding: 0.7rem 1.2rem;
+        font-size: 14px;
+    }
+
+    .process-grid {
+        gap: 2rem;
+    }
+
+    .process-item {
+        padding-top: 3rem;
+    }
+
+    .portfolio-grid {
+        gap: 2rem;
+    }
+
+}
+
+/* --- Адаптив FAQ and CTA --- */
+
+@media (max-width: 1280px) {
+  .answer-wrapper {
+    padding-left: 32px;
+    padding-right: 32px;
+  }
+
+}
+
+@media (max-width: 1080px) {
+  .answer-wrapper {
+    padding-left: 0px;
+    padding-right: 0px;
+  }
+
+  .cta-container {
+    padding: 0 176px;
+  }
+
+  .cta-text {
+    padding: 20px 0 20px 20px;
+  }
+
+}
+
+@media (max-width: 992px) {
+  .faq-accordion {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    margin-left: 1.2rem;
+    margin-right: 1.2rem;
+  }
+
+  .faq-item {
+    display: block;
+    position: relative;
+    padding: 1.2rem;
+  }
+
+  .number {
+    display: inline-block;
+    font-size: 1.05rem;
+    margin-right: 0.6rem;
+  }
+
+  .question {
+    display: inline-block;
+    font-size: 14px;
+    font-weight: 500;
+    max-width: calc(100% - 60px);
+    vertical-align: middle;
+    height: auto;
+  }
+
+  .toggle-btn {
+    position: absolute;
+    right: 1.2rem;
+    top: 1.4rem;
+  }
+
+  .answer-wrapper {
+    margin-top: 0.6rem;
+    padding-left: 0;
+  }
+
+  .answer-text {
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
+  .cta-container {
+    padding: 0 32px;
+  }
+
+}
+
+@media (max-width: 768px) {
+  .faq-item {
+    padding: 1rem;
+  }
+
+  .number {
+    font-size: 14px;
+    margin-right: 0.5rem;
+  }
+
+  .question {
+    font-size: 14px;
+    max-width: calc(100% - 50px);
+  }
+
+  .toggle-btn {
+    right: 1rem;
+    top: 1.2rem;
+  }
+
+  .answer-text {
+    font-size: 0.95rem;
+  }
+
+  .cta-container {
+    padding: 0;
+  }
+
+  .cta-text {
+    font-size: 14px;
+    padding: 20px;
+    margin: 0;
+    align-self: center;
+  }
+
+  .cta-button {
+    padding: 12px 20px 36px 20px;
+    align-self: center;
+    margin: 0;
+  }
+
+}
+
+@media (max-width: 480px) {
+  .faq-item {
+    padding: 0.8rem 0;
+  }
+
+  .faq-accordion {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .number {
+    font-size: 14px;
+    min-width: 28px;
+  }
+
+  .question {
+    font-size: 14px;
+  }
+
+  .toggle-btn {
+    right: 0.8rem;
+    top: 1rem;
+  }
+
+  .answer-text {
+    font-size: 14px;
+  }
+
+  .answer-wrapper {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+}
+
+
+
