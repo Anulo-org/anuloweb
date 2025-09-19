@@ -1,17 +1,15 @@
-// src/main.js
+// src/main.js — Лінза/рефракція, що "ламає" саме hero-блок (варіант A)
 import * as THREE from 'three'
 import html2canvas from 'html2canvas'
 import './style.css'
 
 function init() {
-  // === 1) ЩО «ЛОМАЄМО» (DOM-снапшот) =======================================
-  let sourceEl = document.getElementById('heroContent')
-  if (!sourceEl) sourceEl = document.querySelector('.hero-section') || document.body
+  // ---------- 1) Вихідний DOM для лінзи ----------
+  const hero = document.querySelector('.hero-section') || document.getElementById('heroContent') || document.body
 
-  // === 2) КУДИ МАЛЮЄМО (контейнер для канви) ===============================
+  // Контейнер під канву в межах hero
   let mount = document.getElementById('hero-3d')
   if (!mount) {
-    const hero = document.querySelector('.hero-section') || document.body
     mount = document.createElement('div')
     mount.id = 'hero-3d'
     hero.appendChild(mount)
@@ -22,193 +20,173 @@ function init() {
     zIndex: '2000',
     pointerEvents: 'none',
   })
+  // ВАЖЛИВО: у CSS зроби .hero-section { position:relative } щоб absolute-inset:0 працював
 
-  // === 3) БАЗА THREE.JS =====================================================
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, premultipliedAlpha: false })
+  // ---------- 2) Three ----------
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
   renderer.setClearColor(0x000000, 0)
   renderer.outputColorSpace = THREE.SRGBColorSpace
   mount.appendChild(renderer.domElement)
 
-  // ---------- 3) Верхня сцена з лінзою ----------
   const scene = new THREE.Scene()
   const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 100)
   camera.position.set(0, 0, 4)
 
-  // === 4) TEXTURE: Знімок DOM (екранний бекграунд) ==========================
+  // ---------- 3) Текстура з html2canvas (саме hero) ----------
   const screenTex = new THREE.Texture()
   screenTex.colorSpace = THREE.SRGBColorSpace
   screenTex.minFilter = THREE.LinearFilter
   screenTex.magFilter = THREE.LinearFilter
   screenTex.generateMipmaps = false
 
-  // === 5) TEXTURE: Normal-map для «скляних хвиль/нерівностей» ===============
-  const texLoader = new THREE.TextureLoader()
-  const normalMap = texLoader.load('https://threejs.org/examples/textures/water/Water_1_M_Normal.jpg')
-  normalMap.wrapS = normalMap.wrapT = THREE.RepeatWrapping
-  normalMap.repeat.set(1.5, 1.5) // ⬅️ масштаб візерунку хвиль (більше значення — дрібніші хвилі)
+  // Знімок hero; scale = devicePixelRatio → чіткий текст
+  let snapshotScale = Math.max(2, window.devicePixelRatio || 1) // передамо в шейдер
+  async function snapshotHero() {
+    const bg = getComputedStyle(hero).backgroundColor || '#f7f7f7'
+    const canvas = await html2canvas(hero, {
+      backgroundColor: bg,           // не прозоро — уникнемо "чорного"
+      useCORS: true,
+      scale: snapshotScale,
+      // не захоплювати нашу канву
+      ignoreElements: (el) => el.tagName === 'CANVAS' || el.closest('#hero-3d'),
+    })
+    screenTex.image = canvas
+    screenTex.needsUpdate = true
+    // оновимо реальні розміри snapshot'а (в px)
+    heroSize.set(hero.clientWidth, hero.clientHeight)
+    uniforms.uHeroSize.value.copy(heroSize)
+    uniforms.uSnapshotScale.value = canvas.width / Math.max(1, hero.clientWidth)
+  }
 
-  // === 6) СФЕРА З ОБ’ЄМНОЮ РЕФРАКЦІЄЮ + ДИСТОРСІЄЮ =========================
-  const sphereGeo = new THREE.SphereGeometry(1, 128, 128)
+  // ---------- 4) Геометрія та шейдер лінзи ----------
+  const sphereGeo = new THREE.SphereGeometry(1.15, 128, 128)
+
+  // Юніформи
+  const heroSize = new THREE.Vector2(1, 1)
+  const uniforms = {
+    uSceneTex:      { value: screenTex },             // snapshot hero
+    uResolution:    { value: new THREE.Vector2(1, 1) }, // розмір нашого рендера (mount)
+    uHeroSize:      { value: heroSize },              // clientWidth/Height hero
+    uSnapshotScale: { value: snapshotScale },         // canvas.width / hero.clientWidth
+
+    // керування ефектом:
+    uIOR:           { value: 1.52 },    // індекс заломлення: скло 1.45–1.52
+    uThickness:     { value: 240.0 },   // сила «риби-ока» в пікселях (180–320)
+    uEdgeOnly:      { value: 0.35 },    // 0..1 — приглушити центр, залишити краї
+    uOpacity:       { value: 1.0 },     // прозорість шару (залиш 1.0)
+  }
+
   const sphereMat = new THREE.ShaderMaterial({
-    uniforms: {
-      // ——— джерела
-      uSceneTex:    { value: screenTex },    // снапшот DOM
-      uNormalMap:   { value: normalMap },    // normal-map «скла»
-
-      uStrength:  { value: 0.08 },                  // сила заломлення (0.08–0.22)
-
-      // ——— керування виглядом (ГОЛОВНІ СЛАЙДЕРИ)
-      uIOR:         { value: 1.52 }, // ⬅️ коеф. заломлення: скло ≈ 1.45–1.52, вода ≈ 1.33
-      uThickness:   { value: 1 }, // ⬅️ «товщина» лінзи (0.6–1.3): сила вигину
-      uEdgeBoost:   { value: 1.5 }, // ⬅️ підсилення ефекту на краях сфери (0–1.5)
-      uNormalScale: { value: 10.0 }, // ⬅️ сила «хвиль» normal-map у пікселях по висоті екрану (10–20)
-
-      // ——— додаткові ефекти
-      uCAber:       { value: 0.5 }, // ⬅️ хроматична аберація (0..0.5): кольоровий fringe для читабельності скла
-      uRim:         { value: 0.25 }, // ⬅️ яскравість скляного обідка (0..0.25)
-
-      // ——— службові
-      uOpacity:     { value: 1.0 },                  // прозорість шару (залиш 1.0)
-      uResolution:  { value: new THREE.Vector2(1,1) }, // оновлюється при ресайзі
-    },
+    uniforms,
     vertexShader: /* glsl */`
-      varying vec2 vUv;
-      varying vec4 vClipPos;
+      varying vec3 vViewPos;
       varying vec3 vNormalVS;
-
       void main() {
-        vUv = uv;
-        // нормаль у просторі камери — стабільна для розрахунків заломлення
+        vec4 vp = modelViewMatrix * vec4(position,1.0);
+        vViewPos = vp.xyz;
         vNormalVS = normalize(normalMatrix * normal);
-        vec4 viewPos = modelViewMatrix * vec4(position, 1.0);
-        vClipPos = projectionMatrix * viewPos;
-        gl_Position = vClipPos;
+        gl_Position = projectionMatrix * vp;
       }
     `,
     fragmentShader: /* glsl */`
       precision highp float;
 
       uniform sampler2D uSceneTex;
-      uniform sampler2D uNormalMap;
+      uniform vec2  uResolution;     // розмір renderer'а в пікселях (mount)
+      uniform vec2  uHeroSize;       // розмір hero (clientWidth/Height)
+      uniform float uSnapshotScale;  // canvas.width / hero.clientWidth
 
-      uniform vec2  uResolution;
+      uniform float uIOR;
+      uniform float uThickness;
+      uniform float uEdgeOnly;
       uniform float uOpacity;
 
-      uniform float uIOR;         // коеф. заломлення
-      uniform float uThickness;   // товщина лінзи
-      uniform float uEdgeBoost;   // підсилення на краях
-      uniform float uNormalScale; // сила хвиль
-      uniform float uCAber;       // хром. аберація
-      uniform float uRim;         // обідок
-
-      varying vec2 vUv;
-      varying vec4 vClipPos;
+      varying vec3 vViewPos;
       varying vec3 vNormalVS;
 
-      // Екранні UV 0..1
-      vec2 screenUV() {
-        vec2 ndc = vClipPos.xy / vClipPos.w; // -1..1
-        return ndc * 0.5 + 0.5;              // 0..1
+      // UV героя у 0..1 на основі піксельної позиції фрагмента в межах mount
+      // gl_FragCoord.xy: пікселі viewport'а renderer'а (початок у ЛІВОМУ-НИЖНЬОМУ куті)
+      vec2 heroUV() {
+        // конвертуємо в координати hero: X той самий, Y — фліп (бо html2canvas зверху-вниз)
+        float x = gl_FragCoord.x;
+        float y = uResolution.y - gl_FragCoord.y;
+        return vec2(x / uHeroSize.x, y / uHeroSize.y);
       }
 
       void main() {
-        vec2 suv = screenUV();
+        // 1) Базові UV героя (0..1), без рефракції
+        vec2 baseUV = heroUV();
 
-        // 1) ОБ’ЄМНА РЕФРАКЦІЯ (через нормаль сфери)
-        vec3 n  = normalize(vNormalVS);
-        float edge = 1.0 - abs(n.z);                // ближче до краю — більший вигин
-        float base = (uIOR - 1.0);                  // сила матеріалу (скло > вода)
-        float strength = base * (1.0 + uEdgeBoost * edge) * uThickness;
+        // 2) Рефракція (обʼємна, Snell)
+        vec3 V = normalize(-vViewPos);         // напрямок до камери у view-space
+        vec3 N = normalize(vNormalVS);         // нормаль сфери у view-space
+        float eta = 1.0 / uIOR;
+        vec3 R = refract(-V, N, eta);
 
-        // Нормалізуємо у пікселі екрану (по висоті)
-        vec2 px = 1.0 / uResolution.yy;
-        vec2 refractOffset = (n.xy / max(0.05, abs(n.z))) * (strength) * px;
+        // посилення на краях (edge-only)
+        float edge = 1.0 - abs(N.z);           // 0 у центрі → 1 на краю
+        float w = mix(1.0, edge, clamp(uEdgeOnly,0.0,1.0));
 
-        // 2) ДОДАТКОВА ДИСТОРСІЯ normal-map (скляні нерівності)
-        //    Переводимо з [0..1] → [-1..1] і масштабуємо у пікселях
-        vec3 nm = texture2D(uNormalMap, vUv).xyz * 2.0 - 1.0;
-        vec2 distortOffset = nm.xy * (uNormalScale * px.y);
+        // 3) Офсет у ПІКСЕЛЯХ (відносно героя), далі переведемо його в UV героя
+        float z = max(0.05, abs(R.z));
+        vec2 offset_px = (R.xy / z) * (uThickness * w);
 
-        // 3) Сумарний зсув UV
-        vec2 off = refractOffset + distortOffset;
+        // 4) Переводимо піксельний офсет у UV героя, враховуючи snapshotScale:
+        //    (canvas у html2canvas збільшений у snapshotScale разів)
+        vec2 uvOffset = (offset_px * uSnapshotScale) / uHeroSize;
 
-        // 4) Семпл DOM + легка хроматична аберація для виразності
-        vec3 col;
-        col.r = texture2D(uSceneTex, suv + off * (1.0 + uCAber)).r;
-        col.g = texture2D(uSceneTex, suv + off * (1.0 + uCAber * 0.5)).g;
-        col.b = texture2D(uSceneTex, suv + off).b;
+        vec2 uv = baseUV + uvOffset;
 
-        // 5) Скляний «rim» по краю
-        col += vec3(pow(edge, 2.2) * uRim);
-
+        // 5) Сейдімо з героївської текстури (без додавання білого/аберацій — чисте скло)
+        vec3 col = texture2D(uSceneTex, uv).rgb;
         gl_FragColor = vec4(col, uOpacity);
       }
     `,
     transparent: true,
     depthWrite: false,
-    depthTest: false, // рендеримо як оверлей
+    depthTest: false,
   })
+
   const sphere = new THREE.Mesh(sphereGeo, sphereMat)
   scene.add(sphere)
 
-  // — опційне позиціювання/масштаб кулі —
-  sphere.scale.set(1.2, 1.2, 1.2)  // збільшити кулю
-  // sphere.position.set(0.35, 0.12, 0)
-
-  // === 7) РОЗМІР ПІД КОНТЕЙНЕР =============================================
-  function resizeToContainer() {
+  // ---------- 5) Ресайз під контейнер hero ----------
+  function resizeToHero() {
     const w = mount.clientWidth || 1
     const h = mount.clientHeight || 1
     renderer.setSize(w, h, false)
     camera.aspect = w / h
     camera.updateProjectionMatrix()
-    sphereMat.uniforms.uResolution.value.set(w, h)
-    renderer.render(scene, camera)
+    uniforms.uResolution.value.set(w, h)
+    heroSize.set(hero.clientWidth, hero.clientHeight)
+    uniforms.uHeroSize.value.copy(heroSize)
   }
-  resizeToContainer()
-  new ResizeObserver(resizeToContainer).observe(mount)
+  new ResizeObserver(resizeToHero).observe(mount)
+  resizeToHero()
 
-  // === 8) СНАПШОТ DOM (ВИСОКА ЧІТКІСТЬ) ================================
-  let snapPending = false
-  async function snapshotHero() {
-    if (snapPending) return
-    snapPending = true
-    try {
-      const canvas = await html2canvas(sourceEl, {
-        backgroundColor: '#f7f7f7',                    // ⬅️ фон снапшоту (під твій hero)
-        useCORS: true,
-        scale: Math.max(3, window.devicePixelRatio),   // ⬅️ якість тексту (2–3)
-        ignoreElements: (el) => el.tagName === 'CANVAS' || el.closest('#hero-3d'),
-      })
-      screenTex.image = canvas
-      screenTex.needsUpdate = true
-      renderer.render(scene, camera)
-    } catch (e) {
-      console.error('[3D] snapshot error', e)
-    } finally {
-      snapPending = false
-    }
-  }
+  // ---------- 6) Снапшот героя (на старті, при скролі та ресайзі) ----------
   snapshotHero()
   window.addEventListener('resize', () => requestAnimationFrame(snapshotHero), { passive: true })
-  window.addEventListener('scroll', () => requestAnimationFrame(snapshotHero), { passive: true })
+  window.addEventListener('scroll',  () => requestAnimationFrame(snapshotHero), { passive: true })
 
-  // === 9) ПЛАВНИЙ ДРЕЙФ ЛІВО-ПРАВО (можна відключити) ======================
+  // ---------- 7) Анімація (легкий дрейф, щоб «жило») ----------
   let t = 0
-  const driftAmp   = 0.2  // ⬅️ амплітуда дрейфу по X (0.2–0.8)
-  const driftSpeed = 0.01  // ⬅️ швидкість дрейфу (0.005–0.02)
-
   function animate() {
     requestAnimationFrame(animate)
-    t += driftSpeed
-    sphere.position.x = Math.sin(t) * driftAmp
+    t += 0.01
+    sphere.position.x = Math.sin(t) * 0.5
     renderer.render(scene, camera)
   }
   animate()
+
+  // === Підказки для тонкої настройки (можеш змінити на ходу):
+  // uniforms.uIOR.value        = 1.50..1.52     // скло
+  // uniforms.uThickness.value  = 200..320       // сила «риби-ока»
+  // uniforms.uEdgeOnly.value   = 0.0..0.6       // центр чистий → ефект на краях
+  // uniforms.uOpacity.value    = 1.0            // прозорість шару
 }
 
-// Запуск після готовності DOM
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init)
 } else {
